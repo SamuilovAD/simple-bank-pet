@@ -50,18 +50,12 @@ type TransferTxResult struct {
 	ToEntry     Entry    `json:"to_entry"`
 }
 
-var txKey = struct{}{}
-
 // TransferTx performs a money transfer from one account to the other.
 // It creates a transfer record, add account entries, and update accounts' balance within a single database transaction
 func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 	err := store.executeTransaction(ctx, func(queryExecutor *Queries) error {
 		var err error
-
-		txName := ctx.Value(txKey)
-
-		fmt.Println(txName, "create transfer")
 		result.Transfer, err = queryExecutor.CreateTransfer(ctx, CreateTransferParams{
 			FromAccountID: arg.FromAccountId,
 			ToAccountID:   arg.ToAccountId,
@@ -70,7 +64,6 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		if err != nil {
 			return err
 		}
-		fmt.Println(txName, "create entry1")
 		result.FromEntry, err = queryExecutor.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountId,
 			Amount:    -arg.Amount,
@@ -78,33 +71,20 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		if err != nil {
 			return err
 		}
-		fmt.Println(txName, "create entry2")
 		result.ToEntry, err = queryExecutor.CreateEntry(ctx, CreateEntryParams{
-			AccountID: arg.FromAccountId,
+			AccountID: arg.ToAccountId,
 			Amount:    +arg.Amount,
 		})
-		fmt.Println(txName, "get account 1")
-		account1, err := queryExecutor.GetAccountForUpdate(ctx, arg.FromAccountId)
-		if err != nil {
-			return err
-		}
-		fmt.Println(txName, "update account 1")
-		result.FromAccount, err = queryExecutor.UpdateAccount(ctx, UpdateAccountParams{
-			ID:      arg.FromAccountId,
-			Balance: account1.Balance - arg.Amount,
+		result.FromAccount, err = queryExecutor.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.FromAccountId,
+			Amount: -arg.Amount,
 		})
 		if err != nil {
 			return err
 		}
-		fmt.Println(txName, "get account 2")
-		account2, err := queryExecutor.GetAccountForUpdate(ctx, arg.ToAccountId)
-		if err != nil {
-			return err
-		}
-		fmt.Println(txName, "update account 2")
-		result.ToAccount, err = queryExecutor.UpdateAccount(ctx, UpdateAccountParams{
-			ID:      arg.ToAccountId,
-			Balance: account2.Balance + arg.Amount,
+		result.ToAccount, err = queryExecutor.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.ToAccountId,
+			Amount: arg.Amount,
 		})
 		if err != nil {
 			return err
