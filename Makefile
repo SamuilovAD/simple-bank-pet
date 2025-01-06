@@ -14,4 +14,7 @@ testRunExample:
 	go test github.com/SamuilovAD/simple-bank-pet/db/sqlc -run ^TestMain$
 unit-tests-with-coverage:
 	go test -v -cover ./...
-.PHONY: createdb dropdb migrateup migratedown sqlc testRunExample
+
+server:
+	go run main.go
+.PHONY: createdb dropdb migrateup migratedown sqlc testRunExample server
