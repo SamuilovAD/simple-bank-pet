@@ -14,7 +14,8 @@ testRunExample:
 	go test github.com/SamuilovAD/simple-bank-pet/db/sqlc -run ^TestMain$
 unit-tests-with-coverage:
 	go test -v -cover ./...
-
 server:
 	go run main.go
-.PHONY: createdb dropdb migrateup migratedown sqlc testRunExample server
+mock:
+	mockgen -package mockdb -destination db/mock/store.go github.com/SamuilovAD/simple-bank-pet/db/sqlc Store
+.PHONY: createdb dropdb migrateup migratedown sqlc testRunExample server mock
