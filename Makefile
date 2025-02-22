@@ -19,10 +19,10 @@ sqlc:
 	sqlc generate
 testRunExample:
 	go test github.com/SamuilovAD/simple-bank-pet/db/sqlc -run ^TestMain$
-unit-tests-with-coverage:
+test-with-coverage:
 	go test -v -cover ./...
 server:
 	go run main.go
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/SamuilovAD/simple-bank-pet/db/sqlc Store
-.PHONY: createdb dropdb migrate-create migrate-up migrate-up-next migrate-down migrate-down-last sqlc testRunExample server mock
+.PHONY: createdb dropdb migrate-create migrate-up migrate-up-next migrate-down migrate-down-last sqlc testRunExample test-with-coverage server mock
