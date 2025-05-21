@@ -9,13 +9,16 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  deploy:
     name: Build image
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4
-
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.33.1' # default is latest stable
+        id: install
       #- name: Debug OIDC Token
       #  run: |
       #    echo "OIDC Token URL: $ACTIONS_ID_TOKEN_REQUEST_URL"
@@ -43,5 +46,13 @@ jobs:
           REPOSITORY: simplebank
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t latest .
+          docker push -a $REGISTRY/$REPOSITORY
+
+      - name: Deploy image to Amazon EKS
+        run: |
+          kubectl apply -f eks/aws-auth.yaml
+          kubectl apply -f eks/deployment.yaml
+          kubectl apply -f eks/service.yaml
+          kubectl apply -f eks/issuer.yaml
+          
