@@ -48,25 +48,6 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push -a $ECR_REGISTRY/$ECR_REPOSITORY
-      - name: Request GitHub OIDC token
-        id: get-oidc-token
-        run: |
-          curl -s "${ACTIONS_ID_TOKEN_REQUEST_URL}" \
-            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
-            -o id-token.json
-          cat id-token.json | jq .
-        env:
-          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
-
-      - name: Decode OIDC token
-        run: |
-          TOKEN=$(cat id-token.json | jq -r '.value')
-          IFS='.' read -ra PARTS <<< "$TOKEN"
-          echo "===== HEADER ====="
-          echo "${PARTS[0]}" | base64 -d
-          echo "===== PAYLOAD ====="
-          echo "${PARTS[1]}" | base64 -d | jq .
       - name: Update kube config
         run: aws eks update-kubeconfig --name simple-bank --region eu-north-1
       - name: Deploy image to Amazon EKS
