@@ -1,0 +1,68 @@
+
+Table "accounts" {
+  "id" bigint [pk, not null]
+  "owner" varchar [not null]
+  "balance" bigint [not null]
+  "currency" varchar [not null]
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    (owner, currency) [unique, name: "owner_currency_key"]
+    owner [type: btree, name: "accounts_owner_idx"]
+  }
+}
+
+Table "entries" {
+  "id" bigint [pk, not null]
+  "account_id" bigint [not null]
+  "amount" bigint [not null]
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    account_id [type: btree, name: "entries_account_id_idx"]
+  }
+}
+
+Table "sessions" {
+  "id" uuid [pk, not null]
+  "username" varchar [not null]
+  "refresh_token" varchar [not null]
+  "user_agent" varchar [not null]
+  "client_ip" varchar [unique, not null]
+  "is_blocked" boolean [not null, default: false]
+  "expires_at" timestamp [not null]
+  "created_at" timestamp [not null, default: `now()`]
+}
+
+Table "transfers" {
+  "id" bigint [pk, not null]
+  "from_account_id" bigint [not null]
+  "to_account_id" bigint [not null]
+  "amount" bigint [not null]
+  "created_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    from_account_id [type: btree, name: "transfers_from_account_id_idx"]
+    (from_account_id, to_account_id) [type: btree, name: "transfers_from_account_id_to_account_id_idx"]
+    to_account_id [type: btree, name: "transfers_to_account_id_idx"]
+  }
+}
+
+Table "users" {
+  "username" varchar [pk, not null]
+  "hashed_password" varchar [not null]
+  "full_name" varchar [not null]
+  "email" varchar [unique, not null]
+  "password_changed_at" timestamp [not null, default: `'0001-01-01 00:00:00+00'`]
+  "created_at" timestamp [not null, default: `now()`]
+}
+
+Ref "accounts_owner_fkey":"users"."username" < "accounts"."owner"
+
+Ref "entries_account_id_fkey":"accounts"."id" < "entries"."account_id"
+
+Ref "sessions_username_fkey":"users"."username" < "sessions"."username"
+
+Ref "transfers_from_account_id_fkey":"accounts"."id" < "transfers"."from_account_id"
+
+Ref "transfers_to_account_id_fkey":"accounts"."id" < "transfers"."to_account_id"

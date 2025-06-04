@@ -1,3 +1,4 @@
+DB_URL=postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable
 postgres:
 	docker run --name postgres17 --network bank-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:17-alpine
 createdb:
@@ -7,14 +8,17 @@ dropdb:
 migrate-create:
 	@echo "migrate create -ext sql -dir db/migration -seq $(name)"
 migrate-up:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" up
+	migrate -path db/migration -database "$(DB_URL)" up
 migrate-up-next:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" up 1
+	migrate -path db/migration -database "$(DB_URL)" up 1
 migrate-down:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" down
+	migrate -path db/migration -database "$(DB_URL)" down
 migrate-down-last:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" down 1
-
+	migrate -path db/migration -database "$(DB_URL)" down 1
+db_docs:
+	dbdocs build doc/db.dbml --password "secret"
+db_schema:
+	dbml2sql --postgres -o doc/schema.sql doc/db.dbml
 sqlc:
 	sqlc generate
 testRunExample:
@@ -25,4 +29,4 @@ server:
 	go run main.go
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/SamuilovAD/simple-bank-pet/db/sqlc Store
-.PHONY: createdb dropdb migrate-create migrate-up migrate-up-next migrate-down migrate-down-last sqlc testRunExample test-with-coverage server mock
+.PHONY: createdb dropdb migrate-create migrate-up migrate-up-next migrate-down migrate-down-last sqlc testRunExample test-with-coverage server mock db_docs db_schema
