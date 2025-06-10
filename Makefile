@@ -29,4 +29,10 @@ server:
 	go run main.go
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/SamuilovAD/simple-bank-pet/db/sqlc Store
-.PHONY: createdb dropdb migrate-create migrate-up migrate-up-next migrate-down migrate-down-last sqlc testRunExample test-with-coverage server mock db_docs db_schema
+
+proto:
+	rm -f pb/*.go
+	protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative \
+	--go-grpc_out=pb --go-grpc_opt=paths=source_relative \
+	proto/*.proto
+.PHONY: createdb dropdb migrate-create migrate-up migrate-up-next migrate-down migrate-down-last sqlc testRunExample test-with-coverage server mock db_docs db_schema proto
