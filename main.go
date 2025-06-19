@@ -9,7 +9,6 @@ import (
 	"github.com/SamuilovAD/simple-bank-pet/util"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
 )
@@ -37,7 +36,7 @@ func runGrpcServer(config util.Config, store db.Store) {
 	}
 	grpcServer := grpc.NewServer()
 	pb.RegisterSimpleBankServer(grpcServer, server)
-	reflection.Register(grpcServer) // allow a GRPC client to see all services and methods
+	//reflection.Register(grpcServer) // allow a GRPC client to see all services and methods
 	listener, err := net.Listen("tcp", config.GrpcServerAddress)
 	if err != nil {
 		log.Fatal("cannot create gRPC listener")
