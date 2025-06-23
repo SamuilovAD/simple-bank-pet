@@ -1,16 +1,20 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"github.com/SamuilovAD/simple-bank-pet/api"
 	db "github.com/SamuilovAD/simple-bank-pet/db/sqlc"
 	"github.com/SamuilovAD/simple-bank-pet/gapi"
 	"github.com/SamuilovAD/simple-bank-pet/pb"
 	"github.com/SamuilovAD/simple-bank-pet/util"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 	"log"
 	"net"
+	"net/http"
 )
 
 const (
@@ -26,7 +30,9 @@ func main() {
 		log.Fatal("cannot connect to db:", err)
 	}
 	store := db.NewStore(conn)
+	go runGatewayServer(config, store)
 	runGrpcServer(config, store)
+
 }
 
 func runGrpcServer(config util.Config, store db.Store) {
@@ -43,6 +49,41 @@ func runGrpcServer(config util.Config, store db.Store) {
 	}
 	log.Printf("Start gRPC server at %s", listener.Addr().String())
 	err = grpcServer.Serve(listener) //starts sever
+	if err != nil {
+		log.Fatal("cannot start gRPC server:", err)
+	}
+}
+
+func runGatewayServer(config util.Config, store db.Store) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	server, err := gapi.NewServer(config, store)
+	if err != nil {
+		log.Fatal("cannot create server:", err)
+	}
+	jsonOption := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{
+			UseProtoNames: true,
+		},
+		UnmarshalOptions: protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		},
+	})
+	grpcMux := runtime.NewServeMux(jsonOption)
+	err = pb.RegisterSimpleBankHandlerServer(ctx, grpcMux, server)
+	if err != nil {
+		log.Fatal("cannot register gRPC gateway handler:", err)
+	}
+	mux := http.NewServeMux()
+	mux.Handle("/", grpcMux)
+
+	listener, err := net.Listen("tcp", config.HttpServerAddress)
+	if err != nil {
+		log.Fatal("cannot create gateway listener:", err)
+	}
+	log.Printf("Start Gateway Http server at %s", listener.Addr().String())
+	err = http.Serve(listener, mux) //starts sever
 	if err != nil {
 		log.Fatal("cannot start gRPC server:", err)
 	}
