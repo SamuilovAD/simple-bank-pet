@@ -3,11 +3,16 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/SamuilovAD/simple-bank-pet/api"
 	db "github.com/SamuilovAD/simple-bank-pet/db/sqlc"
 	"github.com/SamuilovAD/simple-bank-pet/gapi"
 	"github.com/SamuilovAD/simple-bank-pet/pb"
 	"github.com/SamuilovAD/simple-bank-pet/util"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
@@ -29,10 +34,25 @@ func main() {
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
+	runDBMigration(config.MigrationUrl, config.DBSource)
+
 	store := db.NewStore(conn)
 	go runGatewayServer(config, store)
 	runGrpcServer(config, store)
+	//runGinServer(config, store)
 
+}
+
+func runDBMigration(migrationUrl string, dbSource string) {
+	migration, err := migrate.New(migrationUrl, dbSource)
+	if err != nil {
+		log.Fatal("cannot create migration:", err)
+	}
+	if err = migration.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		log.Fatal("failed to run migrate up:", err)
+	}
+
+	log.Println("db migrated successfully")
 }
 
 func runGrpcServer(config util.Config, store db.Store) {
