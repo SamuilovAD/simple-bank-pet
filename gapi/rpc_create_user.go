@@ -6,10 +6,13 @@ import (
 	"github.com/SamuilovAD/simple-bank-pet/pb"
 	"github.com/SamuilovAD/simple-bank-pet/util"
 	"github.com/SamuilovAD/simple-bank-pet/val"
+	"github.com/SamuilovAD/simple-bank-pet/worker"
+	"github.com/hibiken/asynq"
 	"github.com/lib/pq"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"time"
 )
 
 func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
@@ -39,6 +42,22 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	}
 	response := &pb.CreateUserResponse{
 		User: convertUser(user),
+	}
+	taskPayload := worker.PayloadSendVerifyEmail{
+		Username: user.Username,
+	}
+	opts := []asynq.Option{
+		asynq.MaxRetry(30),
+		asynq.ProcessIn(10 * time.Second),
+		asynq.Queue(worker.QueueCritical),
+	}
+	err = server.taskDistributor.Distribute(
+		ctx,
+		taskPayload,
+		opts...,
+	)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to distribute task to send verification email: %s", err)
 	}
 
 	return response, nil

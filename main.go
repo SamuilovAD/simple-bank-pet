@@ -9,11 +9,13 @@ import (
 	"github.com/SamuilovAD/simple-bank-pet/gapi"
 	"github.com/SamuilovAD/simple-bank-pet/pb"
 	"github.com/SamuilovAD/simple-bank-pet/util"
+	"github.com/SamuilovAD/simple-bank-pet/worker"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/hibiken/asynq"
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -43,8 +45,13 @@ func main() {
 	runDBMigration(config.MigrationUrl, config.DBSource)
 
 	store := db.NewStore(conn)
-	go runGatewayServer(config, store)
-	runGrpcServer(config, store)
+	redisOpt := asynq.RedisClientOpt{
+		Addr: config.RedisAddress,
+	}
+	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
+	go runTaskProcessor(redisOpt, store)
+	go runGatewayServer(config, store, taskDistributor)
+	runGrpcServer(config, store, taskDistributor)
 	//runGinServer(config, store)
 
 }
@@ -61,8 +68,8 @@ func runDBMigration(migrationUrl string, dbSource string) {
 	log.Info().Msg("db migrated successfully")
 }
 
-func runGrpcServer(config util.Config, store db.Store) {
-	server, err := gapi.NewServer(config, store)
+func runGrpcServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributorInterface) {
+	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Msg("cannot create server")
 	}
@@ -81,11 +88,11 @@ func runGrpcServer(config util.Config, store db.Store) {
 	}
 }
 
-func runGatewayServer(config util.Config, store db.Store) {
+func runGatewayServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributorInterface) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	server, err := gapi.NewServer(config, store)
+	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Msg("cannot create server")
 	}
@@ -126,5 +133,14 @@ func runGinServer(config util.Config, store db.Store) {
 	err = server.Start(config.HttpServerAddress)
 	if err != nil {
 		log.Fatal().Msg("cannot start server")
+	}
+}
+
+func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) {
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store)
+	log.Info().Msg("start task processor")
+	err := taskProcessor.Start()
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot start task processor")
 	}
 }

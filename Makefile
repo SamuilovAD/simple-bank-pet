@@ -44,4 +44,8 @@ evans:
        --port 9090 \
        --proto service_simple_bank.proto \
      --path proto
-.PHONY: createdb dropdb migrate-create migrate-up migrate-up-next migrate-down migrate-down-last sqlc testRunExample test-with-coverage server mock db_docs db_schema proto
+
+redis:
+	docker run --name redis -p 6379:6379 -d redis:8-alpine
+
+.PHONY: createdb dropdb migrate-create migrate-up migrate-up-next migrate-down migrate-down-last sqlc testRunExample test-with-coverage server mock db_docs db_schema proto redis
