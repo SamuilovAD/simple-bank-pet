@@ -17,7 +17,7 @@ type PayloadSendVerifyEmail struct {
 
 func (distributor *RedisTaskDistributor) Distribute(
 	ctx context.Context,
-	payload PayloadSendVerifyEmail,
+	payload *PayloadSendVerifyEmail,
 	opts ...asynq.Option,
 ) error {
 	jsonPayload, err := json.Marshal(payload)

@@ -14,11 +14,11 @@ type Server struct {
 	config          util.Config
 	store           db.Store
 	tokenMaker      token.Maker
-	taskDistributor worker.TaskDistributorInterface
+	taskDistributor worker.TaskDistributor
 }
 
 // NewServer creates a new HTTP sever and setup routing
-func NewServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributorInterface) (*Server, error) {
+func NewServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) (*Server, error) {
 	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
 	if err != nil {
 		return nil, fmt.Errorf("can't create token maker: %w", err)

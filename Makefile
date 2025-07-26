@@ -29,6 +29,7 @@ server:
 	go run main.go
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/SamuilovAD/simple-bank-pet/db/sqlc Store
+	mockgen -package mockwk -destination worker/mock/distributor.go github.com/SamuilovAD/simple-bank-pet/worker TaskDistributor
 proto:
 	rm -f pb/*.go
 	rm -f doc/swagger/*.swagger.json

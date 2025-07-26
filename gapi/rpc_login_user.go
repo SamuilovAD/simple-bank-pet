@@ -55,7 +55,7 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		ExpiresAt:    refreshPayload.ExpiredAt,
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to generate session"+err.Error())
+		return nil, status.Errorf(codes.Internal, "failed to generate session")
 	}
 	rsp := &pb.LoginUserResponse{
 		User:                  convertUser(user),
