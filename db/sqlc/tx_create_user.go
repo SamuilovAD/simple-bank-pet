@@ -15,7 +15,7 @@ type CreateUserTxResult struct {
 // It creates a transfer record, add account entries, and update accounts' balance within a single database transaction
 func (store *SqlStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error) {
 	var result CreateUserTxResult
-	err := store.executeTransaction(ctx, func(queryExecutor *Queries) error {
+	err := store.execTx(ctx, func(queryExecutor *Queries) error {
 		var err error
 		result.User, err = queryExecutor.CreateUser(ctx, arg.CreateUserParams)
 		if err != nil {

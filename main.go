@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"github.com/SamuilovAD/simple-bank-pet/api"
 	db "github.com/SamuilovAD/simple-bank-pet/db/sqlc"
@@ -16,6 +15,8 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/hibiken/asynq"
+	_ "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -24,6 +25,8 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -32,19 +35,27 @@ const (
 	serverAddress = "0.0.0.0:8080"
 )
 
+var interruptSignals = []os.Signal{
+	os.Interrupt,
+	syscall.SIGTERM,
+	syscall.SIGINT,
+}
+
 func main() {
 
 	config, err := util.LoadConfig(".")
 	if config.ENVIRONMENT == "development" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
-	conn, err := sql.Open(config.DBDriver, config.DBSource)
+	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
+	defer stop()
+	connPool, err := pgxpool.New(ctx, config.DBSource)
 	if err != nil {
 		log.Fatal().Msg("cannot connect to db")
 	}
 	runDBMigration(config.MigrationUrl, config.DBSource)
 
-	store := db.NewStore(conn)
+	store := db.NewStore(connPool)
 	redisOpt := asynq.RedisClientOpt{
 		Addr: config.RedisAddress,
 	}
