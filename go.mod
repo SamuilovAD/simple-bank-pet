@@ -11,7 +11,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.0
 	github.com/hibiken/asynq v0.25.1
 	github.com/jackc/pgx/v5 v5.5.4
-	github.com/lib/pq v1.10.9
 	github.com/o1egl/paseto v1.0.0
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/viper v1.20.1
@@ -53,6 +52,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

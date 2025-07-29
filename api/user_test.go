@@ -9,7 +9,6 @@ import (
 	db "github.com/SamuilovAD/simple-bank-pet/db/sqlc"
 	"github.com/SamuilovAD/simple-bank-pet/util"
 	"github.com/gin-gonic/gin"
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"io"
@@ -110,7 +109,7 @@ func TestCreateUserAPI(t *testing.T) {
 				store.EXPECT().
 					CreateUser(gomock.Any(), gomock.Any()).
 					Times(1).
-					Return(db.User{}, &pq.Error{Code: "23505"})
+					Return(db.User{}, db.ErrUniqueViolation)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusForbidden, recorder.Code)
