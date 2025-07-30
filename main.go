@@ -41,7 +41,6 @@ var interruptSignals = []os.Signal{
 }
 
 func main() {
-
 	config, err := util.LoadConfig(".")
 	if config.ENVIRONMENT == "development" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
