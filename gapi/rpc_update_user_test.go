@@ -40,6 +40,7 @@ func TestUpdateUserAPI(t *testing.T) {
 					t,
 					tokenMaker,
 					user.Username,
+					user.Role,
 					time.Minute,
 				)
 			},

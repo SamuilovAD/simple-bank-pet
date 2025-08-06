@@ -6,7 +6,7 @@ createdb:
 dropdb:
 	docker exec -it postgres17 dropdb simple_bank
 migrate-create:
-	@echo "migrate create -ext sql -dir db/migration -seq $(name)"
+	migrate create -ext sql -dir db/migration -seq $(name)
 migrate-up:
 	migrate -path db/migration -database "$(DB_URL)" up
 migrate-up-next:

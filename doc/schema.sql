@@ -1,6 +1,6 @@
 -- SQL dump generated using DBML (dbml.dbdiagram.io)
 -- Database: PostgreSQL
--- Generated at: 2025-06-04T18:16:47.848Z
+-- Generated at: 2025-07-30T17:47:03.577Z
 
 CREATE TABLE "accounts" (
   "id" bigint PRIMARY KEY NOT NULL,
